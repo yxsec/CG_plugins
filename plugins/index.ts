@@ -1,0 +1,8 @@
+import './auth-service.plugin.js'
+import './data-proxy.plugin.js'
+import './lecture-data.plugin.js'
+import './course-material.plugin.js'
+import './lecture-transcribe.plugin.js'
+import './stage-summary.plugin.js'
+import './conversation-dialogue.plugin.js'
+import './course-summary.plugin.js'
