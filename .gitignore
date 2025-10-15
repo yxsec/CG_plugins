@@ -2,6 +2,6 @@ note.txt
 .DS_Store
 node_modules
 package.json
-package-loc.json
+package-lock.json
 test/
 tsconfig.json

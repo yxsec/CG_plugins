@@ -197,7 +197,7 @@ async function requestAnalysis(client: OpenAI, fileId: string, fileName: string 
   console.log('[course-material] 请求 OpenAI 分析, file_id:', fileId, 'model:', config.openai.models.material)
   
   try {
-    // 使用原来的 responses.create API（如果这是之前可用的版本）
+    // 使用 responses.create，并用 json_schema 结构化输出
     console.log('[course-material] 调用 client.responses.create...')
     const response: any = await client.responses.create({
       model: config.openai.models.material,
@@ -214,7 +214,10 @@ async function requestAnalysis(client: OpenAI, fileId: string, fileName: string 
           ]
         }
       ],
-      text: { format: COURSE_PROFILE_FORMAT },
+      response_format: {
+        type: 'json_schema',
+        json_schema: COURSE_PROFILE_FORMAT
+      },
       store: false
     } as any)
     
@@ -233,7 +236,7 @@ async function requestAnalysis(client: OpenAI, fileId: string, fileName: string 
   } catch (error) {
     console.error('[course-material] OpenAI 分析失败:', {
       error: error instanceof Error ? error.message : String(error),
-      type: error?.constructor?.name,
+      type: (error as any)?.constructor?.name,
       status: (error as any)?.status,
       code: (error as any)?.code
     })
@@ -250,7 +253,6 @@ function buildSystemPrompt(): string {
     '- 若资料中缺少某字段，填空字符串 "" 或空数组 [].',
     '- outline 字段请给出 8-12 个要点，若不足则给出材料中能识别的主题。',
     '- 输出到语言必须是中文。'
-
   ].join('\n')
 }
 
