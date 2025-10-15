@@ -1,2 +1,7 @@
 note.txt
 .DS_Store
+node_modules
+package.json
+package-loc.json
+test/
+tsconfig.json

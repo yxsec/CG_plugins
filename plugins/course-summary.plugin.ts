@@ -186,7 +186,10 @@ registerPlugin('audio.summary', async ({ intent, userId, requestId }: PluginCont
     const response: any = await client.responses.create({
       model,
       input: buildMessages({ language, stage_summaries, conversation_text, file_ids }),
-      text: { format: OUTPUT_SCHEMA },
+      response_format: {
+        type: 'json_schema',
+        json_schema: OUTPUT_SCHEMA
+      },
       store: false
     } as any)
     console.log(`${logPrefix} OpenAI API 调用完成`)
