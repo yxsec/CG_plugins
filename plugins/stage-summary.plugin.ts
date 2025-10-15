@@ -124,7 +124,7 @@ function buildPrompt({ previous2, previous, current, language, keywords }: Stage
     '- summary: 一句话总结当前阶段。',
     '- highlights: 3-6 条最重要要点。',
     '- knowledge_keywords: 与内容相关的知识点关键词（5-8个词语）。',
-    '如果上文有前序阶段内容，请综合考虑以保持连贯，强调本阶段的新信息。'
+    '如果上文有前序阶段内容，请综合考虑以保持连贯，强调本阶段的新信息，但不需要总结前序阶段内容。'
   ]
   if (keywordText) instruction.push(keywordText)
   const content = sections.map((s) => `【${s.title}】\n${s.body}`).join('\n\n')
