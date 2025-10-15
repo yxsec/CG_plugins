@@ -92,7 +92,8 @@ registerPlugin('material.analyze', async ({ intent, userId }: PluginContext): Pr
     console.log('[course-material] 文件上传成功, file_id:', uploaded.id)
     
     console.log('[course-material] 开始分析文件内容...')
-    const profile = await requestAnalysis(client, uploaded.id, file.name)
+    // 默认中文；后续若有外部语言参数，可替换第四个参数
+    const profile = await requestAnalysis(client, uploaded.id, file.name, '中文')
     console.log('[course-material] 分析完成:', profile)
     
     return {
@@ -192,24 +193,33 @@ async function uploadFile(client: OpenAI, buffer: Buffer, name: string, mimeType
   }
 }
 
-async function requestAnalysis(client: OpenAI, fileId: string, fileName: string = 'material'){
+/**
+ * 新签名：增加 language，默认中文
+ */
+async function requestAnalysis(
+  client: OpenAI,
+  fileId: string,
+  fileName: string = 'material',
+  language: string = '中文'
+){
   const config = getConfig()
-  console.log('[course-material] 请求 OpenAI 分析, file_id:', fileId, 'model:', config.openai.models.material)
+  console.log('[course-material] 请求 OpenAI 分析, file_id:', fileId, 'model:', config.openai.models.material, 'language:', language)
   
   try {
-    // 使用 responses.create，并用 json_schema 结构化输出
-    console.log('[course-material] 调用 client.responses.create...')
     const response: any = await client.responses.create({
       model: config.openai.models.material,
       input: [
         {
           role: 'system',
-          content: [{ type: 'input_text', text: buildSystemPrompt() }]
+          content: [{ type: 'input_text', text: buildSystemPrompt(language) }]
         },
         {
           role: 'user',
           content: [
-            { type: 'input_text', text: `请根据我上传的课程资料（${fileName}）生成课程画像 JSON。` },
+            { type: 'input_text', text: (language && !/^zh/i.test(language))
+                ? `Please generate the course profile JSON from the uploaded material (“${fileName}”).`
+                : `请根据我上传的课程资料（${fileName}）生成课程画像 JSON。`
+            },
             { type: 'input_file', file_id: fileId }
           ]
         }
@@ -244,16 +254,42 @@ async function requestAnalysis(client: OpenAI, fileId: string, fileName: string 
   }
 }
 
-function buildSystemPrompt(): string {
-  return [
-    '你是一名教育内容分析师。',
-    '请阅读用户提供的课程资料（可能是 PDF、PPT、Word 或文本文件），生成课程画像字段，严格遵守 JSON Schema。',
-    '规则：',
-    '- 所有内容必须来自材料本身，不得编造。',
-    '- 若资料中缺少某字段，填空字符串 "" 或空数组 [].',
-    '- outline 字段请给出 8-12 个要点，若不足则给出材料中能识别的主题。',
-    '- 输出到语言必须是中文。'
-  ].join('\n')
+/**
+ * 带语言切换的系统提示：默认中文，否则用传入语言
+ */
+function buildSystemPrompt(language: string): string {
+  const lang = (language || '').trim() || '中文'
+  const isZh = lang === '中文' || /^(zh|zh-CN|zh-TW|Chinese)$/i.test(lang)
+
+  const l1 = isZh
+    ? '你是一名教育内容分析师。'
+    : 'You are an educational content analyst.'
+
+  const l2 = isZh
+    ? '请阅读用户提供的课程资料（可能是 PDF、PPT、Word 或文本文件），生成课程画像字段，严格遵守 JSON Schema。'
+    : 'Read the provided course material (PDF, PPT, Word, or text) and produce a course profile strictly following the JSON Schema.'
+
+  const l3 = isZh
+    ? '规则：'
+    : 'Rules:'
+
+  const r1 = isZh
+    ? '- 所有内容必须来自材料本身，不得编造。'
+    : '- All content must come from the material; do not invent.'
+
+  const r2 = isZh
+    ? '- 若资料中缺少某字段，填空字符串 "" 或空数组 [].'
+    : '- If a field is missing in the material, use empty string "" or empty array [].'
+
+  const r3 = isZh
+    ? '- outline 字段请给出 8-12 个要点，若不足则给出材料中能识别的主题。'
+    : '- For "outline", provide 8–12 bullets; if fewer are available, list identifiable topics.'
+
+  const r4 = isZh
+    ? `- 所有输出必须使用${lang}。`
+    : `- All output must be in ${lang}.`
+
+  return [l1, l2, l3, r1, r2, r3, r4].join('\n')
 }
 
 function extractJsonPayload(response: any){

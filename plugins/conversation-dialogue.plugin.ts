@@ -225,13 +225,24 @@ async function continueConversation(client: OpenAI, conversationId: string, payl
 }
 
 function buildInitialPrompt(language: string, summaries: string){
-  return [
-    `你是一个助手，请使用中文回答问题。`,
-    '请使用以下课程阶段摘要来回答问题。如果答案不存在，请说明无法找到相关信息。',
-    '阶段摘要：',
-    summaries.trim()
-  ].join('\n\n')
+  const lang = (language || '').trim() || '中文'
+  const isZh =
+    lang === '中文' ||
+    /^(zh|zh-CN|zh-TW|Chinese)$/i.test(lang)
+
+  const intro1 = isZh
+    ? '你是一个助手，请使用中文回答问题。'
+    : `You are an assistant. Please answer in ${lang}.`
+
+  const intro2 = isZh
+    ? '请使用以下课程阶段摘要来回答问题。如果答案不存在，请说明无法找到相关信息。'
+    : 'Use the stage summaries below to answer. If the answer is not present, say you cannot find relevant information.'
+
+  const header = isZh ? '阶段摘要：' : 'Stage summaries:'
+
+  return [intro1, intro2, header, summaries.trim()].join('\n\n')
 }
+
 
 function buildAdditionalSummary(summaries: string){
   return ['附加阶段信息：', summaries.trim()].join('\n')
